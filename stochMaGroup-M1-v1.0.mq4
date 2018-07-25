@@ -79,7 +79,7 @@ void OnTick()
          if(strSignal == "none" || signalTriggerNum >= 7){
             strSignal = signal();
          }
-         //checkProtected();
+         checkProtected();
          CheckTimeM1 = iTime(NULL,PERIOD_M1,0);
      }
  }
@@ -154,13 +154,13 @@ void checkEntry(){
 	double stoch100_2 = iStochastic(NULL, PERIOD_M1, 100, 3, 3, MODE_SMA, 0, MODE_MAIN, 2);
    double ma1 = iMA(NULL,0,20,0,MODE_SMA,PRICE_CLOSE,1);
    if((strSignal == "buy1" || strSignal == "buy2" || strSignal == "buy3") && stoch14_1>24 && stoch100_1>24){
-      if((signalTriggerNum <3 && Ask - ma1<1*Pip) || (signalTriggerNum >=2 && Ask - ma1<4*Pip) ){
+      if((signalTriggerNum <3 && Ask - ma1<1*Pip) || (signalTriggerNum >=3 && Ask - ma1<2.5*Pip) ){
          objCTradeMgr.Buy(Lots, intSL, intTP, strSignal);
       }
    }
    
    if((strSignal == "sell1" || strSignal == "sell2" || strSignal == "sell3") && stoch14_1<76 && stoch100_1<76){
-      if((signalTriggerNum <3 && ma1 - Bid<1*Pip) || (signalTriggerNum >=2 && ma1 - Bid <4*Pip) ){
+      if((signalTriggerNum <3 && ma1 - Bid<1*Pip) || (signalTriggerNum >=3 && ma1 - Bid <2.5*Pip) ){
          objCTradeMgr.Sell(Lots, intSL, intTP, strSignal);
       }
    }
@@ -169,30 +169,47 @@ void checkEntry(){
 void checkProtected(){
    if(objCTradeMgr.Total()<=0)return ;
    int tradeTicket;
+   string comment;
+   double stoch14 = iStochastic(NULL, PERIOD_M1, 14, 3, 3, MODE_SMA, 0, MODE_MAIN, 1);
+   double stoch100 = iStochastic(NULL, PERIOD_M1, 100, 3, 3, MODE_SMA, 0, MODE_MAIN, 1);
    for (int i=0; i<OrdersTotal(); i++) {
       if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) {
          if(OrderSymbol()==Symbol() && OrderMagicNumber() == MagicNumber && OrderType() == OP_BUY){
             tradeTicket = OrderTicket();
-            if(strSignal == "buy1"){
-               objCTradeMgr.Close(tradeTicket);
+            comment = OrderComment();
+            if(comment == "buy1"){
+               if(stoch100 >= 92 || stoch14 >= 92){
+                  objCTradeMgr.Close(tradeTicket);
+               }
             }
-            if(strSignal == "buy2"){
-               objCTradeMgr.Close(tradeTicket);
+            if(comment == "buy2"){
+               if(stoch100 >= 92 || stoch14 >= 92){
+                  objCTradeMgr.Close(tradeTicket);
+               }
             }
-            if(strSignal == "buy3"){
-               objCTradeMgr.Close(tradeTicket);
+            if(comment == "buy3"){
+               if(stoch100 >= 92 || stoch14 >= 92){
+                  objCTradeMgr.Close(tradeTicket);
+               }
             }
          }
          if(OrderSymbol()==Symbol() && OrderMagicNumber() == MagicNumber && OrderType() == OP_SELL){
             tradeTicket = OrderTicket();
-            if(strSignal == "sell1"){
-               objCTradeMgr.Close(tradeTicket);
+            comment = OrderComment();
+            if(comment == "sell1"){
+               if(stoch100 <= 8 || stoch14 <= 8){
+                  objCTradeMgr.Close(tradeTicket);
+               }
             }
-            if(strSignal == "sell2"){
-               objCTradeMgr.Close(tradeTicket);
+            if(comment == "sell2"){
+               if(stoch100 <= 8 || stoch14 <= 8){
+                  objCTradeMgr.Close(tradeTicket);
+               }
             }
-            if(strSignal == "sell3"){
-               objCTradeMgr.Close(tradeTicket);
+            if(comment == "sell3"){
+               if(stoch100 <= 8 || stoch14 <= 8){
+                  objCTradeMgr.Close(tradeTicket);
+               }
             }
          }
       }
@@ -247,16 +264,16 @@ void MoveTrailingStop(){
                //盈利超过2.5Pip则向上提止损
                if(myStopLoss - openPrice < 8*Pip && Bid - openPrice >= 25*Pip){
                   newSL = openPrice + 8*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }else if(myStopLoss - openPrice <5*Pip && Bid - openPrice >= 14*Pip){
                   newSL = openPrice + 5*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }else if(myStopLoss - openPrice <0 && Bid - openPrice >= 10*Pip){
                   newSL = openPrice + 2*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }else if(myStopLoss - openPrice <0 && Bid - openPrice >= 7*Pip){
                   newSL = openPrice - 5*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }
                
                
@@ -270,16 +287,16 @@ void MoveTrailingStop(){
                myStopLoss = OrderStopLoss();
                if(openPrice - myStopLoss <8*Pip && openPrice - Ask  > 25*Pip){
                   newSL = openPrice - 8*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }else if(openPrice - myStopLoss <5*Pip && openPrice - Ask  > 14*Pip){
                   newSL = openPrice - 5*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }else if(openPrice - myStopLoss <0 && openPrice - Ask  > 10*Pip){
                   newSL = openPrice -2*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }else if(openPrice - myStopLoss <0 && openPrice - Ask  > 7*Pip){
                   newSL = openPrice + 5*Pip;
-                  OrderModify(OrderTicket(),openPrice,newSL, 0, 0);
+                  OrderModify(OrderTicket(),openPrice,newSL, OrderTakeProfit(), 0);
                }
                
                
